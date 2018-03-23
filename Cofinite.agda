@@ -1,6 +1,6 @@
 {-# OPTIONS --safe #-}
 
-module MultiMap where
+module Cofinite where
 
 open import Data.Nat renaming (ℕ to Nat ; _⊔_ to max)
 open import Data.List
@@ -29,9 +29,6 @@ module _ {a} {A : Set a} where
   not-empty-relax [] [] l2 ()
   not-empty-relax [] (x ∷ l) l2 ev = tt
   not-empty-relax (x ∷ l1) l l2 ev = tt
-
-  ++-not-emptyʳ : ∀ {l : List A} → not-empty (l ++ []) → not-empty l
-  ++-not-emptyʳ {l = l} rewrite ++-identityʳ l = λ z → z
 
   infix 4 _∈_
   data _∈_ (e : A) : List A → Set a where
@@ -66,7 +63,7 @@ dec-≤ a b | yes p = le p
 dec-≤ a b | no ¬p = gt $ ≰⇒> ¬p
 
 
---| maximum of an non-empty list
+-- |maximum of an non-empty list
 ⨆ : Σ (List Nat) not-empty → Nat
 ⨆ ([] , ())
 ⨆ (x ∷ [] , tt) = x
@@ -140,7 +137,7 @@ module _ where
                             in <⇒≱ sx<x $ ≤-step ≤-refl
 
 
---| therefore, it's decidable to construct from a list of natural numbers a new number,
+-- |therefore, it's decidable to construct from a list of natural numbers a new number,
 -- such that it's not inside of the list.
 pick-fresh : (l : List Nat) → Σ Nat (_∉ l)
 pick-fresh [] = zero , (λ ())
