@@ -46,9 +46,28 @@ module _ {a} {A : Set a} where
     ; (found .l)  → ¬p refl
     }
 
+  ∈⇒not-empty : {e : A} {l : List A} → e ∈ l → not-empty l
+  ∈⇒not-empty (skip h c) = tt
+  ∈⇒not-empty (found l) = tt
+
   infix 4 _∉_
   _∉_ : A → List A → Set a
   e ∉ l = ¬ (e ∈ l)
+
+
+NeList : ∀ {a} (A : Set a) → Set a
+NeList A = Σ (List A) not-empty
+
+module _ {a} {A : Set} where
+  infix 4 _∈ne_
+  data _∈ne_ (e : A) : NeList A → Set a where
+    wrap : ∀ {l} ne → e ∈ l → e ∈ne (l , ne)
+  
+  dec-∈ne : ∀ ⦃ dec : Decidable {A = A} _≡_ ⦄ → Decidable _∈ne_
+  dec-∈ne ⦃ dec ⦄ e (l , ne) with dec-∈ ⦃ dec ⦄ e l
+  dec-∈ne {{dec = dec}} e (l , ne) | yes p = yes (wrap ne p)
+  dec-∈ne {{dec = dec}} e (l , ne) | no ¬p = no λ { (wrap .ne c) → ¬p c }
+
 
 -- let's start with something easy from natural numbers
 
@@ -64,7 +83,7 @@ dec-≤ a b | no ¬p = gt $ ≰⇒> ¬p
 
 
 -- |maximum of an non-empty list
-⨆ : Σ (List Nat) not-empty → Nat
+⨆ : NeList Nat → Nat
 ⨆ ([] , ())
 ⨆ (x ∷ [] , tt) = x
 ⨆ (x ∷ x₁ ∷ l , tt) = max x $ ⨆ (x₁ ∷ l , _)
