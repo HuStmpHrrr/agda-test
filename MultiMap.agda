@@ -12,11 +12,10 @@ open import Prelude.Product
 
 open import Relation.Nullary
 
-open import Relation.Binary.Core using (_⇒_)
+open import Relation.Binary.Core using (_⇒_ ; Decidable)
 open import Relation.Binary.PropositionalEquality
 
 open import Data.List.Properties
-
 open import Data.Nat.Properties
 
 -- some list concepts
@@ -39,7 +38,21 @@ module _ {a} {A : Set a} where
     skip : ∀ {l} h → e ∈ l → e ∈ h ∷ l
     found : ∀ l → e ∈ e ∷ l
 
-  
+  dec-∈ : ∀ ⦃ dec : Decidable {A = A} _≡_ ⦄ → Decidable _∈_
+  dec-∈ e [] = no (λ ())
+  dec-∈ ⦃ dec ⦄ e (x ∷ l) with dec e x
+  dec-∈ ⦃ dec ⦄ e (x ∷ l) | yes p rewrite p = yes (found l)
+  dec-∈ ⦃ dec ⦄ e (x ∷ l) | no ¬p with dec-∈ ⦃ dec ⦄ e l
+  dec-∈ ⦃ dec ⦄ e (x ∷ l) | no ¬p | yes p = yes (skip x p)
+  dec-∈ ⦃ dec ⦄ e (x ∷ l) | no ¬p | no ¬p₁ = no λ {
+      (skip .x t) → ¬p₁ t
+    ; (found .l)  → ¬p refl
+    }
+
+  infix 4 _∉_
+  _∉_ : A → List A → Set a
+  e ∉ l = ¬ (e ∈ l)
+
 -- let's start with something easy from natural numbers
 
 data OrderDec (a b : Nat) : Set where
@@ -78,6 +91,7 @@ module _ where
                      x ∎
   ... | found t    = ≤-refl
 
+
   ⨆-relaxationʳ : (l l2 : List Nat) → (ev : not-empty l) →
                 ⨆ (l , ev) ≤ ⨆ (l ++ l2 , not-empty-relax [] l l2 ev)
   ⨆-relaxationʳ [] l2 ()
@@ -109,7 +123,7 @@ module _ where
       max x₁ (⨆ (x₂ ∷ l1 ++ x ∷ l ++ l2 , tt)) ∎
 
 
-  suc-⨆-fresh : ∀ (l : List Nat) → (ev : not-empty l) → ¬ (suc (⨆ (l , ev)) ∈ l)
+  suc-⨆-fresh : ∀ (l : List Nat) → (ev : not-empty l) → suc (⨆ (l , ev)) ∉ l
   suc-⨆-fresh [] ()
   suc-⨆-fresh (x ∷ []) tt (skip .x ())
   suc-⨆-fresh (x ∷ x₁ ∷ l) tt c with dec-≤ x $ ⨆ (x₁ ∷ l , tt)
@@ -124,3 +138,10 @@ module _ where
                             suc (⨆ (x₁ ∷ l , tt)) ≤⟨ a>b ⟩
                             x                     ∎
                             in <⇒≱ sx<x $ ≤-step ≤-refl
+
+
+--| therefore, it's decidable to construct from a list of natural numbers a new number,
+-- such that it's not inside of the list.
+pick-fresh : (l : List Nat) → Σ Nat (_∉ l)
+pick-fresh [] = zero , (λ ())
+pick-fresh (x ∷ l) = (suc $ ⨆ (x ∷ l , _)) , suc-⨆-fresh (x ∷ l) _
